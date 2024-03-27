@@ -69,4 +69,11 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.gson)
+    implementation (libs.androidx.lifecycle.runtime.compose)
+
+    //coil
+    implementation(libs.coil.compose)
+
+    //haze blur
+    implementation(libs.haze.jetpack.compose)
 }
