@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MyProductsApp"
 include(":app")
- 
+include(":CrashHandler")

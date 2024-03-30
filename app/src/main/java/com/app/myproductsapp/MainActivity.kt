@@ -71,150 +71,165 @@ import com.app.myproductsapp.ui.theme.MyProductsAppTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        throw RuntimeException("Test Crash")
         setContent {
-            val imageUrl = "https://source.unsplash.com/random?dark%20color%20full"
-            var selectedTabIndex by remember {
-                mutableIntStateOf(1)
-            }
-            val hazeState = remember { HazeState() }
-
             MyProductsAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Scaffold(
-                        bottomBar = {
-                            Box(
-                                Modifier
-                                    .padding(vertical = 24.dp, horizontal = 64.dp)
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .hazeChild(state = hazeState, shape = CircleShape)
-                                    .border(
-                                        width = Dp.Hairline,
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.White.copy(alpha = .8f),
-                                                Color.White.copy(alpha = .2f),
-                                            )
-                                        ),
-                                        shape = CircleShape
-                                    )
-                            ) {
-                                BottomBarTabs(
-                                    tabs,
-                                    selectedTab = selectedTabIndex,
-                                    onTabSelected = {
-                                        selectedTabIndex = tabs.indexOf(it)
-                                    }
-                                )
-                                val animatedSelectedTabIndex by animateFloatAsState(
-                                    targetValue = selectedTabIndex.toFloat(),
-                                    label = "animatedSelectedTabIndex",
-                                    animationSpec = spring(
-                                        stiffness = Spring.StiffnessLow,
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                    )
-                                )
-                                val animatedColor by animateColorAsState(
-                                    targetValue = tabs[selectedTabIndex].color,
-                                    label = "animatedColor",
-                                    animationSpec = spring(
-                                        stiffness = Spring.StiffnessLow
-                                    )
-                                )
-                                Canvas(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                        .blur(50.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                ) {
-                                    val tabWidth = size.width / tabs.size
-                                    drawCircle(
-                                        color = animatedColor.copy(alpha = .6f),
-                                        radius = size.height / 2,
-                                        center = Offset(
-                                            (tabWidth / 2) + (tabWidth * animatedSelectedTabIndex),
-                                            size.height / 2
-                                        )
-                                    )
-                                }
-                                Canvas(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                ) {
-                                    val path = Path().apply {
-                                        addRoundRect(RoundRect(size.toRect(), cornerRadius = CornerRadius(size.height)))
-                                    }
+                    GlassMorphBottomBar()
+                }
+            }
+        }
+    }
+}
 
-                                    val length = PathMeasure().apply { setPath(path, false) }.length
-                                    val tabWidth = size.width / tabs.size
-                                    drawPath(
-                                        path = path,
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                animatedColor.copy(alpha = 0f),
-                                                animatedColor.copy(alpha = 1f),
-                                                animatedColor.copy(alpha = 1f),
-                                                animatedColor.copy(alpha = 0f),
-                                            ),
-                                            startX = tabWidth * animatedSelectedTabIndex,
-                                            endX = tabWidth * (animatedSelectedTabIndex + 1),
-                                        ),
-                                        style = Stroke(
-                                            width = 6f,
-                                            pathEffect = PathEffect.dashPathEffect(
-                                                intervals = floatArrayOf(length / 2, length)
-                                            )
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    ) { padding ->
-                        LazyColumn(
-                            Modifier
-                                .haze(
-                                    state = hazeState,
-                                    backgroundColor = MaterialTheme.colorScheme.background,
-                                    tint = Color.Black.copy(alpha = .2f),
-                                    blurRadius = 30.dp,
-                                )
-                                .fillMaxSize(),
-                            contentPadding = padding
-                        ) {
-                            items(10) { item ->
-                                Card(
-                                    border = BorderStroke(
-                                        Dp.Hairline,
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.White.copy(alpha = .8f),
-                                                Color.White.copy(alpha = .2f),
-                                            )
-                                        ),
-                                    ),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier
-                                        .padding(top = 10.dp, end = 10.dp, start = 10.dp)
-                                ) {
-                                    SubcomposeAsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data("$imageUrl$item")
-                                            .build(),
-                                        contentDescription = "dark image $item",
-                                        contentScale = ContentScale.Crop,
-                                        loading = {
-                                            CircularProgressIndicator()
-                                        }
-                                    )
-                                }
-                            }
-                        }
+fun ComponentActivity.after(duration: Long, run: () -> Unit) {
+    MainScope().launch {
+        delay(duration)
+        run()
+    }
+}
+
+@Composable
+fun GlassMorphBottomBar() {
+    val imageUrl = "https://source.unsplash.com/random?dark%20color%20full"
+    var selectedTabIndex by remember {
+        mutableIntStateOf(1)
+    }
+    val hazeState = remember { HazeState() }
+    Scaffold(
+        bottomBar = {
+            Box(
+                Modifier
+                    .padding(vertical = 24.dp, horizontal = 64.dp)
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .hazeChild(state = hazeState, shape = CircleShape)
+                    .border(
+                        width = Dp.Hairline,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = .8f),
+                                Color.White.copy(alpha = .2f),
+                            )
+                        ),
+                        shape = CircleShape
+                    )
+            ) {
+                BottomBarTabs(
+                    tabs,
+                    selectedTab = selectedTabIndex,
+                    onTabSelected = {
+                        selectedTabIndex = tabs.indexOf(it)
                     }
+                )
+                val animatedSelectedTabIndex by animateFloatAsState(
+                    targetValue = selectedTabIndex.toFloat(),
+                    label = "animatedSelectedTabIndex",
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessLow,
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                    )
+                )
+                val animatedColor by animateColorAsState(
+                    targetValue = tabs[selectedTabIndex].color,
+                    label = "animatedColor",
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessLow
+                    )
+                )
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .blur(50.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                ) {
+                    val tabWidth = size.width / tabs.size
+                    drawCircle(
+                        color = animatedColor.copy(alpha = .6f),
+                        radius = size.height / 2,
+                        center = Offset(
+                            (tabWidth / 2) + (tabWidth * animatedSelectedTabIndex),
+                            size.height / 2
+                        )
+                    )
+                }
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                ) {
+                    val path = Path().apply {
+                        addRoundRect(RoundRect(size.toRect(), cornerRadius = CornerRadius(size.height)))
+                    }
+
+                    val length = PathMeasure().apply { setPath(path, false) }.length
+                    val tabWidth = size.width / tabs.size
+                    drawPath(
+                        path = path,
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                animatedColor.copy(alpha = 0f),
+                                animatedColor.copy(alpha = 1f),
+                                animatedColor.copy(alpha = 1f),
+                                animatedColor.copy(alpha = 0f),
+                            ),
+                            startX = tabWidth * animatedSelectedTabIndex,
+                            endX = tabWidth * (animatedSelectedTabIndex + 1),
+                        ),
+                        style = Stroke(
+                            width = 6f,
+                            pathEffect = PathEffect.dashPathEffect(
+                                intervals = floatArrayOf(length / 2, length)
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            Modifier
+                .haze(
+                    state = hazeState,
+                    backgroundColor = MaterialTheme.colorScheme.background,
+                    tint = Color.Black.copy(alpha = .2f),
+                    blurRadius = 30.dp,
+                )
+                .fillMaxSize(),
+            contentPadding = padding
+        ) {
+            items(10) { item ->
+                Card(
+                    border = BorderStroke(
+                        Dp.Hairline,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = .8f),
+                                Color.White.copy(alpha = .2f),
+                            )
+                        ),
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .padding(top = 10.dp, end = 10.dp, start = 10.dp)
+                ) {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("$imageUrl$item")
+                            .build(),
+                        contentDescription = "dark image $item",
+                        contentScale = ContentScale.Crop,
+                        loading = {
+                            CircularProgressIndicator()
+                        }
+                    )
                 }
             }
         }
